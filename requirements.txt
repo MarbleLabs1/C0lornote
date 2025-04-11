@@ -1,0 +1,6 @@
+# C0lorNote dependencies
+ttkthemes>=3.0.0
+pillow>=10.0.0  # For image handling
+reportlab>=4.0.0  # For PDF export
+sqlalchemy>=2.0.0  # ORM for database operations
+pyyaml>=6.0  # For configuration files

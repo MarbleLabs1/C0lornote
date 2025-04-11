@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=c0lornote
+export PYBUILD_SYSTEM=setuptools
+export DH_VERBOSE=1
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf build/ *.egg-info/ .eggs/ .pybuild/ __pycache__/ dist/
+
+override_dh_auto_install:
+	dh_auto_install
+	mkdir -p debian/c0lornote/usr/share/pixmaps/
+	mkdir -p debian/c0lornote/usr/share/applications/
+	mkdir -p debian/c0lornote/usr/share/icons/hicolor/48x48/apps/
+	mkdir -p debian/c0lornote/usr/share/icons/hicolor/256x256/apps/
+	cp assets/c0lornote.png debian/c0lornote/usr/share/pixmaps/
+	cp debian/c0lornote.desktop debian/c0lornote/usr/share/applications/
+	cp assets/c0lornote.png debian/c0lornote/usr/share/icons/hicolor/48x48/apps/
+	cp assets/c0lornote.png debian/c0lornote/usr/share/icons/hicolor/256x256/apps/
+

@@ -1,0 +1,38 @@
+Source: c0lornote
+Section: utils
+Priority: optional
+Maintainer: Your Name <your.email@example.com>
+Build-Depends: debhelper (>= 12),
+               dh-python,
+               python3-all (>= 3.9),
+               python3-setuptools,
+               python3-pip,
+               python3-tk
+Standards-Version: 4.5.0
+Homepage: https://github.com/yourusername/c0lornote
+X-Python3-Version: >= 3.9
+
+Package: c0lornote
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         python3-tk,
+         python3-pil,
+         python3-sqlalchemy,
+         python3-yaml,
+         python3-reportlab
+Recommends: python3-ttkthemes
+Description: Modern note-taking application for Linux
+ C0lorNote is a modern note-taking application inspired by macOS Notes
+ and Google Keep. It offers a clean, efficient interface with rich text
+ editing, tagging, categories, and both light and dark themes.
+ .
+ Features include:
+  * Rich text editing (bold, italic, lists)
+  * Organization with categories and tags
+  * Full-text search
+  * Light and dark themes
+  * Note color coding
+  * Export options (PDF, text)
+  * Automatic saving
+

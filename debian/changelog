@@ -1,0 +1,11 @@
+c0lornote (1.0.0) unstable; urgency=medium
+
+  * Initial release
+  * Modern note-taking application with rich text support
+  * Light and dark themes
+  * Organization with categories and tags
+  * Full-text search
+  * Export to PDF and text formats
+
+ -- Your Name <your.email@example.com>  Fri, 11 Apr 2025 15:19:10 +0100
+
