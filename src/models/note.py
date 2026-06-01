@@ -5,6 +5,7 @@ This module defines the Note, Tag, and Category models for the C0lorNote applica
 """
 
 import uuid
+import logging
 import datetime
 from typing import List, Optional, Dict, Any, Union
 from sqlalchemy import (

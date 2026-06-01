@@ -12,16 +12,27 @@ import datetime
 from pathlib import Path
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, event, inspect
+from sqlalchemy import create_engine, event, inspect, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.sql import func
 
 # Import settings to get the database path
 from src.config import settings
 
 # Create a base class for SQLAlchemy models
 Base = declarative_base()
+
+
+class DBVersion(Base):
+    """Tracks the current schema version for migrations."""
+    __tablename__ = 'db_version'
+    id = Column(Integer, primary_key=True)
+    version = Column(Integer, nullable=False)
+    description = Column(String, nullable=True)
+    applied_at = Column(DateTime, default=func.now())
+
 
 # Global variables for database connection
 engine = None
@@ -132,48 +143,20 @@ def db_session():
 def get_db_version():
     """
     Get the current database version
-    
+
     Returns:
         int: The current database version
     """
-    # Check if version table exists
     if not inspect(engine).has_table('db_version'):
-        # Create version table and set initial version
-        from sqlalchemy import Column, Integer, String, DateTime
-        from sqlalchemy.sql import func
-        
-        class DBVersion(Base):
-            __tablename__ = 'db_version'
-            id = Column(Integer, primary_key=True)
-            version = Column(Integer, nullable=False)
-            description = Column(String, nullable=True)
-            applied_at = Column(DateTime, default=func.now())
-        
-        Base.metadata.create_all(engine, tables=[DBVersion.__table__])
-        
-        with db_session() as session:
-            version = DBVersion(version=1, description="Initial schema")
-            session.add(version)
-            session.commit()
-        return 1
-    
-    # Get current version from the database
+        Base.metadata.create_all(engine)
+
     with db_session() as session:
-        # Dynamically define the model to avoid circular imports
-        from sqlalchemy import Column, Integer, String, DateTime
-        
-        class DBVersion(Base):
-            __tablename__ = 'db_version'
-            id = Column(Integer, primary_key=True)
-            version = Column(Integer, nullable=False)
-            description = Column(String, nullable=True)
-            applied_at = Column(DateTime)
-        
-        # Get the latest version
-        latest_version = session.query(DBVersion).order_by(DBVersion.version.desc()).first()
-        if latest_version:
-            return latest_version.version
-        return 0
+        latest = session.query(DBVersion).order_by(DBVersion.version.desc()).first()
+        if latest:
+            return latest.version
+        # Table exists but is unseeded — record initial version
+        session.add(DBVersion(version=1, description="Initial schema"))
+        return 1
 
 
 def run_migrations(current_version):
@@ -205,28 +188,12 @@ def run_migrations(current_version):
         for version in range(current_version + 1, latest_version + 1):
             if version in migrations:
                 try:
-                    # Run the migration function
                     migration_func = migrations[version]
                     description = migration_func()
-                    
-                    # Update the version in the database
-                    from sqlalchemy import Column, Integer, String, DateTime
-                    
-                    class DBVersion(Base):
-                        __tablename__ = 'db_version'
-                        id = Column(Integer, primary_key=True)
-                        version = Column(Integer, nullable=False)
-                        description = Column(String, nullable=True)
-                        applied_at = Column(DateTime)
-                    
-                    # Record the new version
-                    new_version = DBVersion(
+                    session.add(DBVersion(
                         version=version,
                         description=description or f"Upgrade to version {version}"
-                    )
-                    session.add(new_version)
-                    session.commit()
-                    
+                    ))
                     logging.info(f"Applied migration to version {version}: {description}")
                 except Exception as e:
                     logging.error(f"Migration to version {version} failed: {e}")
