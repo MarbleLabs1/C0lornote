@@ -14,18 +14,18 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name="c0lornote",
     version="1.0.0",
-    description="A modern note-taking application inspired by macOS Notes and Google Keep",
+    description="A modern PyQt6 note-taking application with rich text, code editing and three themes",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/c0lornote",
-    author="Your Name",
-    author_email="your.email@example.com",
-    license="MIT",
+    url="https://github.com/MarbleLabs1/C0lornote",
+    author="MarbleCeo",
+    author_email="",
+    license="Proprietary",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: End Users/Desktop",
         "Topic :: Office/Business :: Personal Information Management",
-        "License :: OSI Approved :: MIT License",
+        "License :: Other/Proprietary License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -33,18 +33,16 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Operating System :: POSIX :: Linux",
+        "Operating System :: Microsoft :: Windows",
         "Environment :: X11 Applications :: Gnome",
     ],
-    keywords="notes, note-taking, markdown, rich text, tkinter",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
+    keywords="notes, note-taking, markdown, rich text, pyqt6",
+    packages=find_packages(include=["src", "src.*"]),
     python_requires=">=3.9",
     install_requires=[
-        "ttkthemes>=3.0.0",
-        "pillow>=10.0.0",
-        "reportlab>=4.0.0",
-        "sqlalchemy>=2.0.0",
-        "pyyaml>=6.0",
+        "PyQt6>=6.5.0",
+        "SQLAlchemy>=2.0.0",
+        "PyYAML>=6.0",
     ],
     extras_require={
         "dev": [
@@ -68,15 +66,15 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "c0lornote=c0lornote.main:main",
+            "c0lornote=src.main:main",
         ],
         "gui_scripts": [
-            "c0lornote-gui=c0lornote.main:main",
+            "c0lornote-gui=src.main:main",
         ],
     },
     project_urls={
-        "Bug Reports": "https://github.com/yourusername/c0lornote/issues",
-        "Source": "https://github.com/yourusername/c0lornote",
+        "Bug Reports": "https://github.com/MarbleLabs1/C0lornote/issues",
+        "Source": "https://github.com/MarbleLabs1/C0lornote",
     },
 )
 

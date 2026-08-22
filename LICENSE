@@ -1,0 +1,31 @@
+C0lorNote
+
+Copyright (c) 2026 MarbleCeo. All rights reserved.
+
+This software and its source code are the exclusive property of the copyright
+holder. Viewing the source code in this repository is permitted.
+
+Without prior written permission from the copyright holder, you may NOT:
+
+  - copy, reproduce or redistribute this software, in whole or in part;
+  - modify this software or create derivative works from it;
+  - sell, license, rent or otherwise commercially exploit this software;
+  - remove or alter this notice or any authorship attribution.
+
+Personal, non-commercial use of the compiled application is permitted.
+
+Note: earlier releases of this project were published under the MIT License.
+That grant remains valid for the versions distributed at the time. The terms
+above apply from this version onward.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+This application is built with PyQt6, which is distributed under the GNU GPL v3
+and under a commercial licence from Riverbank Computing. Redistributing this
+application in binary form may require a commercial PyQt licence.

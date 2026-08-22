@@ -1,6 +1,8 @@
-# C0lorNote dependencies
-ttkthemes>=3.0.0
-pillow>=10.0.0  # For image handling
-reportlab>=4.0.0  # For PDF export
-sqlalchemy>=2.0.0  # ORM for database operations
-pyyaml>=6.0  # For configuration files
+# C0lorNote - dependencias de execucao
+PyQt6>=6.5.0          # interface grafica
+SQLAlchemy>=2.0.0     # persistencia das notas em SQLite
+PyYAML>=6.0           # arquivo de configuracao
+
+# Opcionais - somente para regerar os icones com create_icon.py:
+#   matplotlib>=3.7.0
+#   numpy>=1.24.0

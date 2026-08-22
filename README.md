@@ -42,9 +42,12 @@ A clean, distraction-free theme with soft yellow accents on a light background. 
 
 ## 📋 Requirements
 
-- Python 3.6 or newer
-- PyQt6
-- Additional dependencies installed via pip
+- Python 3.9 or newer
+- PyQt6 (graphical interface)
+- SQLAlchemy (note storage)
+- PyYAML (configuration)
+
+All of them are installed by `pip install -r requirements.txt`.
 
 ## 🚀 Installation
 
@@ -52,8 +55,8 @@ A clean, distraction-free theme with soft yellow accents on a light background. 
 
 ```bash
 # Clone the repository (if you haven't already)
-git clone https://github.com/yourusername/c0lornote.git
-cd c0lornote
+git clone https://github.com/MarbleLabs1/C0lornote.git
+cd C0lornote
 
 # Create a virtual environment
 python -m venv venv
@@ -64,11 +67,11 @@ source venv/bin/activate
 # On Windows:
 # venv\Scripts\activate
 
-# Install PyQt6
-pip install PyQt6
+# Install the dependencies
+pip install -r requirements.txt
 
 # Run the application
-python modern_colornote.py
+python run.py
 ```
 
 ### Creating a Desktop Entry (Linux)
@@ -81,7 +84,7 @@ cat > ~/.local/share/applications/c0lornote.desktop << EOF
 [Desktop Entry]
 Name=C0lorNote
 Comment=A modern note-taking application
-Exec=/path/to/your/venv/bin/python /path/to/your/c0lornote/modern_colornote.py
+Exec=/path/to/your/venv/bin/python /path/to/your/C0lornote/run.py
 Icon=/path/to/your/c0lornote/assets/c0lornote.png
 Terminal=false
 Type=Application
@@ -156,37 +159,67 @@ Access quick filters for your notes:
 - **Recent**: Show notes modified in the last 7 days
 - **Code Snippets**: Show only notes containing code
 
+## 🗂️ Project structure
+
+```
+C0lornote/
+├── run.py                  # launcher: checks dependencies and starts the app
+├── src/
+│   ├── main.py             # entry point (QApplication + MainWindow)
+│   ├── config/settings.py  # configuration file (YAML)
+│   ├── models/
+│   │   ├── note.py         # Note model
+│   │   └── storage.py      # SQLite persistence (SQLAlchemy)
+│   ├── ui/
+│   │   ├── main_window.py  # main window and orchestration
+│   │   ├── sidebar.py      # smart views, categories, tags, theme picker
+│   │   ├── note_list.py    # note list with search and filters
+│   │   ├── editor.py       # rich text editor + code editor
+│   │   ├── highlighter.py  # Python syntax highlighting
+│   │   └── theme.py        # the three themes
+│   └── utils/logger.py     # logging
+├── tests/test_smoke.py     # smoke tests (run headless)
+└── debian/                 # .deb packaging
+```
+
+## 💾 Where your notes live
+
+Notes are stored in a SQLite database at:
+
+```
+~/.config/c0lornote/notes.db
+```
+
+If you used an older version that saved to `notes.json`, that file is imported
+automatically on first launch and renamed to `notes.json.migrated`. Nothing is
+lost.
+
+## 🧪 Tests
+
+```bash
+python tests/test_smoke.py     # no pytest needed
+pytest tests/                  # or with pytest
+```
+
+The tests run with the Qt "offscreen" platform, so no window opens and they
+work in CI.
+
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Copyright (c) 2026 MarbleCeo. **All rights reserved.**
 
-```
-MIT License
+The source code is public for reading, but copying, redistribution, modification
+and commercial use require written permission. See [LICENSE](LICENSE) for the
+full terms.
 
-Copyright (c) 2025
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+Earlier releases of this project were published under the MIT License; that
+grant remains valid for the versions distributed at the time.
 
 ## 🤝 Contributing
 
-Contributions to C0lorNote are welcome! Feel free to fork the repository, make changes, and submit pull requests.
+Bug reports and suggestions are welcome via [issues](https://github.com/MarbleLabs1/C0lornote/issues).
+
+Because this project is under a proprietary license, pull requests are accepted only by prior arrangement — open an issue first.
 
 ---
 

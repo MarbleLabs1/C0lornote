@@ -113,19 +113,18 @@ def check_dependencies():
     print_header("Checking dependencies")
     
     # Required packages
-    required_packages = [
-        "ttkthemes",
-        "pillow",
-        "reportlab",
-        "sqlalchemy",
-        "pyyaml"
-    ]
+    # nome no pip -> nome do modulo importavel (nem sempre sao iguais)
+    required_packages = {
+        "PyQt6": "PyQt6",
+        "SQLAlchemy": "sqlalchemy",
+        "PyYAML": "yaml",
+    }
     
     missing_packages = []
     
     # Check each package
-    for package in required_packages:
-        if importlib.util.find_spec(package.lower()) is None:
+    for package, module in required_packages.items():
+        if importlib.util.find_spec(module) is None:
             missing_packages.append(package)
             print_warning(f"Missing package: {package}")
         else:

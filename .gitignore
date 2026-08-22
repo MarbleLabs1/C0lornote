@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Empacotamento / build
+build/
+dist/
+*.egg-info/
+debian/.debhelper/
+debian/c0lornote/
+debian/files
+debian/*.substvars
+debian/*.log
+*.deb
+
+# Banco de dados local e logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

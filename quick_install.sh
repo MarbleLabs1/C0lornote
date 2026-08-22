@@ -77,7 +77,7 @@ if [ "$OS" == "Linux" ]; then
 [Desktop Entry]
 Name=C0lorNote
 Comment=A modern note-taking application with rich text and code editing
-Exec=python3 $INSTALL_DIR/modern_colornote.py
+Exec=python3 $INSTALL_DIR/run.py
 Icon=$INSTALL_DIR/assets/c0lornote_icon.png
 Terminal=false
 Type=Application
@@ -90,7 +90,7 @@ DESKTOP
     mkdir -p "$HOME/.local/bin"
     cat > "$HOME/.local/bin/c0lornote" << LAUNCHER
 #!/bin/bash
-python3 $INSTALL_DIR/modern_colornote.py
+python3 $INSTALL_DIR/run.py
 LAUNCHER
     chmod +x "$HOME/.local/bin/c0lornote"
     
@@ -106,7 +106,7 @@ elif [ "$OS" == "Windows" ]; then
     echo "Creating launcher for Windows..."
     cat > "$INSTALL_DIR/C0lorNote.bat" << BATCH
 @echo off
-python "$INSTALL_DIR\modern_colornote.py"
+python "$INSTALL_DIR\run.py"
 BATCH
     
     echo ""
@@ -118,7 +118,7 @@ elif [ "$OS" == "macOS" ]; then
     mkdir -p "$HOME/.local/bin"
     cat > "$HOME/.local/bin/c0lornote" << LAUNCHER
 #!/bin/bash
-python3 $INSTALL_DIR/modern_colornote.py
+python3 $INSTALL_DIR/run.py
 LAUNCHER
     chmod +x "$HOME/.local/bin/c0lornote"
     
