@@ -32,13 +32,24 @@ A clean, distraction-free theme with soft yellow accents on a light background. 
 
 ## 📸 Screenshots
 
-*Note: The following are descriptions of the application's appearance with each theme. Replace with actual screenshots when available.*
+### Matrix
 
-- **Matrix Theme**: Dark black interface with neon green text, code highlighting in bright green and blue tones, creating a terminal-like experience.
+Neon green on black, with Python syntax highlighting in the code editor.
+Press <kbd>F5</kbd> to run the snippet.
 
-- **Dreamcore Theme**: Rich purple background with pink accents, featuring pastel-colored UI elements and a dreamy aesthetic.
+![C0lorNote with the Matrix theme](assets/screenshots/matrix.png)
 
-- **Minimalist Theme**: Clean white interface with soft yellow accents, minimal UI elements, and plenty of whitespace for distraction-free writing.
+### Dreamcore
+
+Deep purples and pinks, rich text editing with headings, lists and bold.
+
+![C0lorNote with the Dreamcore theme](assets/screenshots/dreamcore.png)
+
+### Minimalist
+
+Light and quiet, for distraction-free writing.
+
+![C0lorNote with the Minimalist theme](assets/screenshots/minimalist.png)
 
 ## 📋 Requirements
 

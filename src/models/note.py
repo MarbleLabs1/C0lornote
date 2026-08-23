@@ -3,7 +3,15 @@
 """Modelo de dados de uma nota."""
 
 import datetime
+import html
+import re
 import uuid
+
+# Tags que separam blocos de texto: viram espaco, para "</p><p>" nao colar
+# duas palavras uma na outra.
+_QUEBRAS = re.compile(r"</?(?:br|p|div|li|ul|ol|h[1-6]|tr|td|th|table)\b[^>]*>", re.I)
+_TAGS = re.compile(r"<[^>]+>")
+_ESPACOS = re.compile(r"\s+")
 
 
 class Note:
@@ -24,6 +32,32 @@ class Note:
         self.created_date = datetime.datetime.now()
         self.modified_date = self.created_date
     
+    def plain_content(self):
+        """Return the content as readable text.
+
+        Rich text notes are stored as HTML. Showing that HTML raw in the note
+        list is unreadable, so tags and entities are resolved here. Code notes
+        are already plain text and are returned as they are.
+        """
+        if self.is_code:
+            return self.content
+        texto = _QUEBRAS.sub(" ", self.content)
+        texto = _TAGS.sub("", texto)
+        texto = html.unescape(texto)
+        return _ESPACOS.sub(" ", texto).strip()
+
+    def preview(self, tamanho=60):
+        """Return a one-line summary for the note list."""
+        texto = _ESPACOS.sub(" ", self.plain_content()).strip()
+        if len(texto) <= tamanho:
+            return texto
+        # Corta na ultima palavra inteira, para nao truncar no meio dela.
+        corte = texto[:tamanho]
+        espaco = corte.rfind(" ")
+        if espaco > tamanho // 2:
+            corte = corte[:espaco]
+        return corte.rstrip() + "..."
+
     def to_dict(self):
         """Convert note to dictionary for serialization"""
         return {

@@ -89,6 +89,50 @@ def test_migracao_do_notes_json_antigo():
     assert os.path.exists(legacy + ".migrated")
 
 
+def test_preview_nao_mostra_html():
+    """A lista de notas mostra texto legivel, nunca as tags."""
+    nota = Note(
+        title="Roadmap",
+        content="<h1>Roadmap</h1><p>Metas do trimestre:</p><ul><li>Fechar a ponte</li></ul>",
+    )
+    preview = nota.preview(60)
+    assert "<" not in preview and ">" not in preview
+    assert preview.startswith("Roadmap Metas do trimestre")
+
+
+def test_preview_resolve_entidades_e_nao_cola_palavras():
+    nota = Note(title="t", content="<p>Caf&eacute;</p><p>azeite</p>")
+    assert nota.plain_content() == "Café azeite"
+
+
+def test_preview_corta_em_palavra_inteira():
+    nota = Note(title="t", content="<p>" + "palavra " * 30 + "</p>")
+    preview = nota.preview(60)
+    assert preview.endswith("...")
+    assert len(preview) <= 63
+    assert not preview[:-3].endswith("palav")
+
+
+def test_preview_de_codigo_fica_intacto():
+    nota = Note(title="t", content="if a < b and b > c:\n    pass", is_code=True)
+    assert "<" in nota.plain_content()
+
+
+def test_busca_ignora_as_tags_html():
+    """Procurar por 'li' ou 'div' nao pode casar com toda nota de texto rico."""
+    _, window = _app_and_window()
+    window.note_list.set_notes([
+        Note(title="Compras", content="<ul><li>Cafe</li></ul>"),
+        Note(title="Codigo", content="x = 1", is_code=True),
+    ])
+
+    window.note_list.search_notes("li")
+    assert window.note_list.filtered_notes == [], "a busca casou com a tag <li>"
+
+    window.note_list.search_notes("cafe")
+    assert len(window.note_list.filtered_notes) == 1
+
+
 if __name__ == "__main__":
     falhas = 0
     for nome, funcao in sorted(globals().items()):

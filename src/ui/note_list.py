@@ -107,10 +107,12 @@ class NoteListWidget(QWidget):
         elif filter_type == "search":
             # Filter by search term
             term = filter_value.lower()
+            # Busca no texto legivel, nao no HTML: procurar "div" ou "li" nao
+            # pode casar com as tags de toda nota de texto rico.
             self.filtered_notes = [
-                note for note in self.notes 
-                if term in note.title.lower() or 
-                   term in (note.content.lower() if not note.is_code else note.content.lower())
+                note for note in self.notes
+                if term in note.title.lower()
+                or term in note.plain_content().lower()
             ]
         
         self.update_list()
@@ -140,7 +142,7 @@ class NoteListWidget(QWidget):
             
             # Format item text with title and preview
             title = note.title or "Untitled"
-            preview = note.content[:50].replace("\n", " ") + "..." if len(note.content) > 50 else note.content
+            preview = note.preview(60)
             
             # Add note type indicator
             type_indicator = "[Code] " if note.is_code else ""
