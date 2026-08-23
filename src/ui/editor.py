@@ -61,7 +61,10 @@ class NoteEditor(QWidget):
         """Create the editor toolbar with formatting options"""
         self.toolbar = QWidget()
         toolbar_layout = QHBoxLayout(self.toolbar)
-        toolbar_layout.setContentsMargins(5, 5, 5, 5)
+        # Margem maior a direita: o botao "Run" fica encostado nessa borda e
+        # estava sendo cortado pela lateral da janela.
+        toolbar_layout.setContentsMargins(8, 6, 12, 6)
+        toolbar_layout.setSpacing(6)
         
         # Formatting buttons for text mode
         self.bold_btn = QPushButton("B")
@@ -122,20 +125,77 @@ class NoteEditor(QWidget):
         theme = self.theme.get_current_theme()
         
         # Apply theme to toolbar
-        self.toolbar.setStyleSheet(f"background-color: {theme['toolbar_bg'].name()};")
-        
+        self.toolbar.setStyleSheet(
+            f"background-color: {theme['toolbar_bg'].name()}; border: none;"
+        )
+
         # Apply theme to editors
         self.theme.apply_theme_to_widget(self.text_editor)
         self.theme.apply_theme_to_widget(self.code_editor)
-        
-        # Apply theme to buttons
+
+        estilo_editor = f"""
+            QTextEdit {{
+                border: none;
+                padding: 10px 14px;
+                selection-background-color: {theme['highlight'].name()};
+                selection-color: {self.theme.contrast_on(theme['highlight']).name()};
+            }}
+        """
+        self.text_editor.setStyleSheet(
+            estilo_editor + self.theme.scrollbar_qss(theme['editor_bg'])
+        )
+        self.code_editor.setStyleSheet(
+            estilo_editor + self.theme.scrollbar_qss(theme['code_bg'])
+        )
+
+        # A aba inativa vinha do estilo nativo: cinza claro sobre fundo claro,
+        # ilegivel no tema Minimalist. E a aba selecionada recebia a cor do
+        # editor, que nos temas escuros e mais escura que a inativa — ou seja,
+        # a aba ativa recuava em vez de se destacar. Agora ela ganha uma faixa
+        # de acento no topo e o texto na cor de acento.
+        self.tab_widget.setStyleSheet(f"""
+            QTabWidget::pane {{
+                border: none;
+                background-color: {theme['editor_bg'].name()};
+            }}
+            QTabBar::tab {{
+                background-color: {theme['toolbar_bg'].name()};
+                color: {self.theme.mix(theme['main_fg'], theme['main_bg'], 0.30).name()};
+                border: none;
+                border-top: 2px solid {theme['toolbar_bg'].name()};
+                padding: 6px 16px;
+                margin-right: 2px;
+            }}
+            QTabBar::tab:selected {{
+                background-color: {theme['editor_bg'].name()};
+                color: {theme['accent'].name()};
+                border-top: 2px solid {theme['accent'].name()};
+                font-weight: 600;
+            }}
+            QTabBar::tab:hover:!selected {{
+                color: {theme['main_fg'].name()};
+            }}
+        """)
+
+        fundo_botao = theme['button_bg']
+        texto_botao = self.theme.contrast_on(fundo_botao).name()
         for btn in [self.bold_btn, self.italic_btn, self.underline_btn, self.color_btn, self.run_btn]:
-            btn.setStyleSheet(
-                f"background-color: {theme['button_bg'].name()}; "
-                f"color: {theme['button_fg'].name()}; "
-                f"border: 1px solid {theme['border'].name()}; "
-                f"padding: 5px;"
-            )
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {fundo_botao.name()};
+                    color: {texto_botao};
+                    border: 1px solid {theme['border'].name()};
+                    border-radius: 6px;
+                    padding: 5px 11px;
+                    min-width: 26px;
+                }}
+                QPushButton:hover {{
+                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
+                }}
+                QPushButton:pressed {{
+                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.3).name()};
+                }}
+            """)
         
         # Re-create syntax highlighting rules for code editor
         self.highlighter.create_formatting_rules()

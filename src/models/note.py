@@ -7,6 +7,13 @@ import html
 import re
 import uuid
 
+# Blocos cujo *conteudo* nao e texto do usuario. Precisam sair inteiros: um
+# documento salvo pelo QTextEdit traz <style> com folha de estilo, e apagar so
+# a tag deixaria o CSS aparecendo no lugar da nota.
+_BLOCOS_INVISIVEIS = re.compile(
+    r"<(style|script|head|title)\b[^>]*>.*?</\1>", re.I | re.S
+)
+
 # Tags que separam blocos de texto: viram espaco, para "</p><p>" nao colar
 # duas palavras uma na outra.
 _QUEBRAS = re.compile(r"</?(?:br|p|div|li|ul|ol|h[1-6]|tr|td|th|table)\b[^>]*>", re.I)
@@ -41,7 +48,8 @@ class Note:
         """
         if self.is_code:
             return self.content
-        texto = _QUEBRAS.sub(" ", self.content)
+        texto = _BLOCOS_INVISIVEIS.sub(" ", self.content)
+        texto = _QUEBRAS.sub(" ", texto)
         texto = _TAGS.sub("", texto)
         texto = html.unescape(texto)
         return _ESPACOS.sub(" ", texto).strip()

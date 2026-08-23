@@ -250,9 +250,19 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(f"background-color: {theme['main_bg'].name()}; color: {theme['main_fg'].name()};")
         
         # Apply theme to status bar
-        self.status_bar.setStyleSheet(
-            f"background-color: {theme['toolbar_bg'].name()}; color: {theme['main_fg'].name()};"
-        )
+        # Sem padding o texto encostava na borda da janela, e o separador
+        # vertical entre os itens ficava sobrando.
+        self.status_bar.setStyleSheet(f"""
+            QStatusBar {{
+                background-color: {theme['toolbar_bg'].name()};
+                color: {self.theme.muted_fg().name()};
+                border-top: 1px solid {theme['border'].name()};
+                padding: 2px 10px;
+            }}
+            QStatusBar::item {{
+                border: none;
+            }}
+        """)
         # Ensure branding label color is also set
         self.branding_label.setStyleSheet(f"color: {theme['main_fg'].name()}; padding-right: 10px;") # Add some padding
     

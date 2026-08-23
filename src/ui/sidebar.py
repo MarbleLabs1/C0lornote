@@ -4,7 +4,7 @@
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit, QDialog, QComboBox,
-    QListWidget, QFrame
+    QListWidget, QFrame, QSizePolicy
 )
 from PyQt6.QtGui import (
     QFont
@@ -108,7 +108,10 @@ class SidebarWidget(QWidget):
         
         # Add categories list
         self.categories_list = QListWidget()
-        self.categories_list.setMaximumHeight(150)
+        self.categories_list.setMinimumHeight(80)
+        self.categories_list.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+        )
         self.categories_list.itemClicked.connect(self.category_clicked)
         self.layout.addWidget(self.categories_list)
         
@@ -140,7 +143,10 @@ class SidebarWidget(QWidget):
         
         # Add tags list
         self.tags_list = QListWidget()
-        self.tags_list.setMaximumHeight(150)
+        self.tags_list.setMinimumHeight(80)
+        self.tags_list.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+        )
         self.tags_list.itemClicked.connect(self.tag_clicked)
         self.layout.addWidget(self.tags_list)
     
@@ -172,17 +178,104 @@ class SidebarWidget(QWidget):
         # Apply theme to the whole sidebar
         self.setStyleSheet(f"background-color: {theme['sidebar_bg'].name()}; color: {theme['sidebar_fg'].name()};")
         
-        # Apply theme to header
-        self.header.setStyleSheet(f"color: {theme['accent'].name()}; font-weight: bold;")
-        
-        # Apply theme to buttons
-        for btn in [self.all_notes_btn, self.recent_btn, self.code_notes_btn, self.add_category_btn, self.add_tag_btn]:
-            btn.setStyleSheet(
-                f"background-color: {theme['button_bg'].name()}; "
-                f"color: {theme['button_fg'].name()}; "
-                f"border: 1px solid {theme['border'].name()}; "
-                f"padding: 5px;"
-            )
+        # O titulo usava a cor de acento, que no tema Minimalist e amarelo
+        # claro sobre fundo claro — praticamente invisivel. heading_fg() cai
+        # para o texto principal quando o acento nao se destaca do fundo.
+        self.header.setStyleSheet(
+            f"color: {self.theme.heading_fg().name()}; "
+            f"font-weight: bold; padding: 2px 0 6px 0;"
+        )
+
+        fundo_botao = theme['button_bg']
+        texto_botao = self.theme.contrast_on(fundo_botao).name()
+
+        for btn in [self.all_notes_btn, self.recent_btn, self.code_notes_btn]:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {fundo_botao.name()};
+                    color: {texto_botao};
+                    border: 1px solid {theme['border'].name()};
+                    border-radius: 7px;
+                    padding: 7px 10px;
+                    text-align: center;
+                }}
+                QPushButton:hover {{
+                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
+                }}
+                QPushButton:pressed {{
+                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.3).name()};
+                }}
+            """)
+
+        # Os botoes "+" sao pequenos e quadrados; merecem raio proprio.
+        for btn in [self.add_category_btn, self.add_tag_btn]:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {fundo_botao.name()};
+                    color: {texto_botao};
+                    border: 1px solid {theme['border'].name()};
+                    border-radius: 6px;
+                    padding: 2px 8px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
+                }}
+            """)
+
+        # As duas listas herdavam a moldura e a barra de rolagem do Windows.
+        estilo_lista = f"""
+            QListWidget {{
+                background-color: {theme['sidebar_bg'].name()};
+                color: {theme['sidebar_fg'].name()};
+                border: 1px solid {theme['border'].name()};
+                border-radius: 8px;
+                padding: 4px;
+                outline: none;
+            }}
+            QListWidget::item {{
+                padding: 5px 6px;
+                border-radius: 5px;
+            }}
+            QListWidget::item:hover {{
+                background-color: {self.theme.mix(theme['sidebar_bg'], theme['highlight'], 0.25).name()};
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme['highlight'].name()};
+                color: {self.theme.contrast_on(theme['highlight']).name()};
+            }}
+        """ + self.theme.scrollbar_qss(theme['sidebar_bg'])
+
+        self.categories_list.setStyleSheet(estilo_lista)
+        self.tags_list.setStyleSheet(estilo_lista)
+
+        # O seletor de tema continuava com a aparencia nativa do Windows,
+        # destoando de tudo o mais na coluna.
+        self.theme_combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {fundo_botao.name()};
+                color: {texto_botao};
+                border: 1px solid {theme['border'].name()};
+                border-radius: 6px;
+                padding: 5px 9px;
+            }}
+            QComboBox:hover {{
+                background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: 20px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {theme['sidebar_bg'].name()};
+                color: {theme['sidebar_fg'].name()};
+                border: 1px solid {theme['border'].name()};
+                border-radius: 6px;
+                selection-background-color: {theme['highlight'].name()};
+                selection-color: {self.theme.contrast_on(theme['highlight']).name()};
+                outline: none;
+            }}
+        """)
     
     def theme_changed(self, index):
         """Handle theme change from the dropdown"""

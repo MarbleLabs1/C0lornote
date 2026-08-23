@@ -14,6 +14,7 @@ from PyQt6.QtCore import (
 )
 
 from src.models.note import Note
+from src.ui.note_item_delegate import NoteItemDelegate
 from src.ui.sidebar import SidebarWidget
 
 class NoteListWidget(QWidget):
@@ -36,6 +37,13 @@ class NoteListWidget(QWidget):
         
         # Create the notes list
         self.list_widget = QListWidget()
+        self.list_widget.setItemDelegate(NoteItemDelegate(self.theme, self.list_widget))
+        self.list_widget.setMouseTracking(True)  # necessario para o estado de hover
+        self.list_widget.setUniformItemSizes(False)
+        self.list_widget.setSpacing(1)
+        self.list_widget.setVerticalScrollMode(
+            QListWidget.ScrollMode.ScrollPerPixel
+        )
         self.list_widget.itemClicked.connect(self.note_clicked)
         self.layout.addWidget(self.list_widget)
         
@@ -65,21 +73,56 @@ class NoteListWidget(QWidget):
         # Apply theme to the widget
         self.theme.apply_theme_to_widget(self)
         
-        # Apply theme to search input
-        self.search_input.setStyleSheet(
-            f"background-color: {theme['editor_bg'].name()}; "
-            f"color: {theme['editor_fg'].name()}; "
-            f"border: 1px solid {theme['border'].name()}; "
-            f"padding: 5px;"
-        )
-        
-        # Apply theme to new note button
-        self.new_note_btn.setStyleSheet(
-            f"background-color: {theme['accent'].name()}; "
-            f"color: white; "
-            f"border: none; "
-            f"padding: 10px;"
-        )
+        borda = theme['border'].name()
+        acento = theme['accent']
+
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {theme['editor_bg'].name()};
+                color: {theme['editor_fg'].name()};
+                border: 1px solid {borda};
+                border-radius: 8px;
+                padding: 7px 10px;
+                selection-background-color: {theme['highlight'].name()};
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {acento.name()};
+            }}
+        """)
+
+        # A lista nao tinha estilo proprio: herdava a moldura e a barra de
+        # rolagem nativas do Windows, que destoam dos tres temas.
+        self.list_widget.setStyleSheet(f"""
+            QListWidget {{
+                background-color: {theme['main_bg'].name()};
+                border: none;
+                outline: none;
+            }}
+            QListWidget::item {{
+                border: none;
+            }}
+        """ + self.theme.scrollbar_qss())
+
+        # O texto do botao era branco fixo — ilegivel sobre o amarelo claro do
+        # tema Minimalist. Agora o contraste vem da propria cor de fundo.
+        texto_botao = self.theme.contrast_on(acento).name()
+        self.new_note_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {acento.name()};
+                color: {texto_botao};
+                border: none;
+                border-radius: 8px;
+                padding: 10px;
+                font-weight: 600;
+                margin: 6px 4px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.theme.mix(acento, theme['main_fg'], 0.18).name()};
+            }}
+            QPushButton:pressed {{
+                background-color: {self.theme.mix(acento, theme['main_fg'], 0.32).name()};
+            }}
+        """)
     
     def set_notes(self, notes):
         """Set the notes list"""
@@ -140,19 +183,20 @@ class NoteListWidget(QWidget):
             # Create a formatted list item
             item = QListWidgetItem()
             
-            # Format item text with title and preview
             title = note.title or "Untitled"
             preview = note.preview(60)
-            
-            # Add note type indicator
-            type_indicator = "[Code] " if note.is_code else ""
-            
-            # Format date
-            date_str = note.modified_date.strftime("%Y-%m-%d %H:%M")
-            
-            item_text = f"{type_indicator}{title}\n{preview}\n{date_str}"
-            item.setText(item_text)
-            
+            date_str = note.modified_date.strftime("%d %b %Y, %H:%M")
+
+            # O desenho fica a cargo do NoteItemDelegate; aqui vao so os dados.
+            # Antes o item era um texto unico com quebras de linha, e as tres
+            # informacoes saiam com o mesmo peso.
+            item.setData(Qt.ItemDataRole.UserRole + 1, {
+                "titulo": title,
+                "previa": preview,
+                "data": date_str,
+                "is_code": note.is_code,
+            })
+
             # Set item data to associate with note index
             item.setData(Qt.ItemDataRole.UserRole, i)
             
