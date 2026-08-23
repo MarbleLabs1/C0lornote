@@ -16,6 +16,7 @@ class ThemeType(Enum):
     MATRIX = 0      # Hacker-style green on black
     DREAMCORE = 1   # Surreal pastel colors
     MINIMALIST = 2  # Soft yellow minimalist
+    SYSTEM = 3      # Follows the operating system's own colours
 
 
 class Theme:
@@ -84,7 +85,51 @@ class Theme:
     
     def get_current_theme(self):
         """Get the current theme settings"""
+        if self.theme_type is ThemeType.SYSTEM:
+            return self._system_theme()
         return self.themes[self.theme_type]
+
+    def _system_theme(self):
+        """Build a theme from the colours the operating system is using.
+
+        Read fresh each time, so switching Windows between light and dark, or
+        changing the accent colour, is picked up on the next theme apply.
+        """
+        from PyQt6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        # A palette viva da aplicacao, nao style().standardPalette(): esta
+        # ultima e uma paleta generica e clara, que nao segue o modo escuro do
+        # sistema. Ler a errada fazia o titulo ser calculado sobre um fundo
+        # claro enquanto os widgets desenhavam sobre um escuro.
+        p = app.palette() if app else QPalette()
+
+        Role = QPalette.ColorRole
+        janela = p.color(Role.Window)
+        texto = p.color(Role.WindowText)
+        base = p.color(Role.Base)
+        realce = p.color(Role.Highlight)
+        escuro = self.contrast_on(janela).lightness() > 128  # texto claro => fundo escuro
+
+        return {
+            'name': 'System',
+            'main_bg': janela,
+            'main_fg': texto,
+            'accent': realce,
+            'sidebar_bg': self.mix(janela, texto, 0.04),
+            'sidebar_fg': texto,
+            'editor_bg': base,
+            'editor_fg': p.color(Role.Text),
+            'toolbar_bg': self.mix(janela, texto, 0.03),
+            'button_bg': p.color(Role.Button),
+            'button_fg': p.color(Role.ButtonText),
+            'border': self.mix(janela, texto, 0.22),
+            'highlight': realce,
+            'code_bg': self.mix(base, texto, 0.05),
+            'font_family': '',        # vazio: usa a fonte padrao do sistema
+            'code_font_family': 'Consolas, "DejaVu Sans Mono", monospace',
+            'is_dark': escuro,
+        }
 
     @staticmethod
     def contrast_on(cor: QColor) -> QColor:
@@ -120,21 +165,41 @@ class Theme:
         theme = self.get_current_theme()
         return self.mix(theme['main_fg'], theme['main_bg'], 0.62)
 
+    @staticmethod
+    def _luminancia_relativa(cor: QColor) -> float:
+        """WCAG relative luminance of a colour."""
+        def canal(v):
+            v = v / 255.0
+            return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+
+        return (
+            0.2126 * canal(cor.red())
+            + 0.7152 * canal(cor.green())
+            + 0.0722 * canal(cor.blue())
+        )
+
+    @classmethod
+    def contrast_ratio(cls, a: QColor, b: QColor) -> float:
+        """WCAG contrast ratio between two colours, from 1.0 to 21.0."""
+        la, lb = cls._luminancia_relativa(a), cls._luminancia_relativa(b)
+        claro, escuro = max(la, lb), min(la, lb)
+        return (claro + 0.05) / (escuro + 0.05)
+
     def heading_fg(self) -> QColor:
         """Colour for section headings, guaranteed to be readable.
 
-        The app title used the accent colour, which on the Minimalist theme is
-        pale yellow on a pale background — effectively invisible.
+        The app title used the accent colour directly. On the Minimalist theme
+        that is pale yellow on a pale background; under the system theme in
+        dark mode it is the Windows accent blue on near-black. Both are
+        unreadable. The accent is only used when it clears 3:1 against the
+        sidebar, the WCAG threshold for large text.
         """
         theme = self.get_current_theme()
         accent = theme['accent']
         fundo = theme['sidebar_bg']
-        # Se o acento nao se destaca do fundo, cai para o texto principal.
-        diferenca = abs(
-            (0.299 * accent.red() + 0.587 * accent.green() + 0.114 * accent.blue())
-            - (0.299 * fundo.red() + 0.587 * fundo.green() + 0.114 * fundo.blue())
-        )
-        return accent if diferenca > 60 else theme['main_fg']
+        if self.contrast_ratio(accent, fundo) >= 3.0:
+            return accent
+        return theme['main_fg']
 
     def scrollbar_qss(self, fundo: QColor = None) -> str:
         """Thin themed scrollbars, replacing the platform default.
@@ -188,10 +253,72 @@ class Theme:
         """Change the current theme"""
         self.theme_type = theme_type
     
+    def palette(self) -> QPalette:
+        """Build a complete QPalette for the current theme.
+
+        This is what makes the app native. Qt's own style draws every widget,
+        reading its colours from the palette — no stylesheet involved. The
+        previous approach set colours with setStyleSheet on each widget, which
+        bypasses QStyle and is what makes a Qt app look like a web page.
+
+        Every role is filled in, including the Disabled group: leaving a role
+        unset means the widget falls back to the desktop's colour, which on a
+        dark theme over a light desktop gives unreadable text.
+        """
+        t = self.get_current_theme()
+        p = QPalette()
+
+        janela, texto = t['main_bg'], t['main_fg']
+        base, texto_base = t['editor_bg'], t['editor_fg']
+        botao, texto_botao = t['button_bg'], self.contrast_on(t['button_bg'])
+        realce = t['highlight']
+
+        Role = QPalette.ColorRole
+        Group = QPalette.ColorGroup
+
+        cores = {
+            Role.Window: janela,
+            Role.WindowText: texto,
+            Role.Base: base,
+            Role.AlternateBase: self.mix(base, texto, 0.06),
+            Role.Text: texto_base,
+            Role.PlaceholderText: self.mix(texto_base, base, 0.55),
+            Role.Button: botao,
+            Role.ButtonText: texto_botao,
+            Role.Highlight: realce,
+            Role.HighlightedText: self.contrast_on(realce),
+            Role.ToolTipBase: t['toolbar_bg'],
+            Role.ToolTipText: texto,
+            Role.Link: t['accent'],
+            Role.LinkVisited: self.mix(t['accent'], janela, 0.35),
+            Role.BrightText: self.contrast_on(janela),
+            # Tons usados pelo Fusion para bordas, relevo e sombra.
+            Role.Light: self.mix(janela, self.contrast_on(janela), 0.14),
+            Role.Midlight: self.mix(janela, self.contrast_on(janela), 0.08),
+            Role.Mid: t['border'],
+            Role.Dark: self.mix(janela, QColor('#000000'), 0.35),
+            Role.Shadow: self.mix(janela, QColor('#000000'), 0.6),
+        }
+
+        for grupo in (Group.Active, Group.Inactive):
+            for role, cor in cores.items():
+                p.setColor(grupo, role, cor)
+
+        # Desabilitado: mesmo fundo, texto recuado — sem isso o Qt usa a cor do
+        # desktop e o texto some.
+        apagado = self.mix(texto, janela, 0.6)
+        for role in (Role.WindowText, Role.Text, Role.ButtonText):
+            p.setColor(Group.Disabled, role, apagado)
+        for role, cor in cores.items():
+            if role not in (Role.WindowText, Role.Text, Role.ButtonText):
+                p.setColor(Group.Disabled, role, cor)
+
+        return p
+
     def apply_theme_to_widget(self, widget: QWidget):
         """Apply the current theme to a widget"""
         theme = self.get_current_theme()
-        
+
         # Create a palette for the widget
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, theme['main_bg'])

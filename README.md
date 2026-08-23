@@ -13,7 +13,7 @@ A modern note-taking application built with PyQt6, featuring rich text editing, 
 
 C0lorNote has been completely rebuilt with PyQt6 to provide a modern, feature-rich experience:
 
-- 🎨 **Three Beautiful Themes**: Choose between Matrix (hacker-style), Dreamcore (surreal pastels), or Minimalist (soft yellow)
+- 🎨 **Four Themes**: Matrix (hacker-style), Dreamcore (surreal pastels), Minimalist (soft yellow), or **System** — which follows your operating system's own colours, including dark mode and your accent colour
 - 📝 **Rich Text Editing**: Format text with bold, italic, underline, and custom colors
 - 💻 **Code Editor**: Dedicated code environment with Python syntax highlighting
 - 🏃 **Run Code**: Execute Python code snippets directly with F5 key
@@ -55,6 +55,14 @@ Deep purples and pinks, rich text editing with headings, lists and bold.
 Light and quiet, for distraction-free writing.
 
 ![C0lorNote with the Minimalist theme](assets/screenshots/minimalist.png)
+
+### System
+
+Follows the operating system: the platform's own widget style, its light or
+dark mode, and the accent colour you picked. On Windows it looks like a
+Windows app; on Linux it follows your desktop.
+
+![C0lorNote with the System theme](assets/screenshots/system.png)
 
 ## 📋 Requirements
 

@@ -174,6 +174,45 @@ def test_o_timer_de_autosave_esta_ligado():
     assert window.autosave_timer.interval() == window.AUTOSAVE_INTERVAL_MS
 
 
+def test_contraste_de_todos_os_temas():
+    """Nenhum tema pode ter texto ilegivel sobre o proprio fundo.
+
+    Foi assim que "+ New Note" saiu branco sobre amarelo claro e o titulo da
+    coluna ficou invisivel: cores fixas, sem ninguem conferindo.
+    """
+    from src.ui.theme import Theme, ThemeType
+
+    for tipo in (ThemeType.MATRIX, ThemeType.DREAMCORE, ThemeType.MINIMALIST):
+        tema = Theme(tipo)
+        cores = tema.get_current_theme()
+        nome = cores["name"]
+
+        pares = [
+            ("texto principal", cores["main_fg"], cores["main_bg"]),
+            ("texto do editor", cores["editor_fg"], cores["editor_bg"]),
+            ("texto da coluna", cores["sidebar_fg"], cores["sidebar_bg"]),
+            ("titulo da coluna", tema.heading_fg(), cores["sidebar_bg"]),
+            ("texto sobre o realce",
+             tema.contrast_on(cores["highlight"]), cores["highlight"]),
+            ("texto do botao",
+             tema.contrast_on(cores["button_bg"]), cores["button_bg"]),
+        ]
+        for rotulo, frente, fundo in pares:
+            razao = Theme.contrast_ratio(frente, fundo)
+            assert razao >= 3.0, (
+                f"{nome}: {rotulo} tem contraste {razao:.2f}:1, abaixo de 3:1"
+            )
+
+
+def test_contrast_on_escolhe_o_lado_certo():
+    from src.ui.theme import Theme
+
+    from PyQt6.QtGui import QColor
+    assert Theme.contrast_on(QColor("#FFFFFF")).lightness() < 128   # fundo claro -> texto escuro
+    assert Theme.contrast_on(QColor("#000000")).lightness() > 128   # fundo escuro -> texto claro
+    assert Theme.contrast_on(QColor("#FFDA79")).lightness() < 128   # o amarelo do Minimalist
+
+
 if __name__ == "__main__":
     falhas = 0
     for nome, funcao in sorted(globals().items()):

@@ -7,7 +7,7 @@ from typing import List
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit, QDialog, QComboBox,
-    QListWidget, QListWidgetItem, QCheckBox
+    QListWidget, QListWidgetItem, QCheckBox, QFrame
 )
 from PyQt6.QtCore import (
     Qt, pyqtSignal
@@ -70,57 +70,31 @@ class NoteListWidget(QWidget):
         """Apply the current theme to the note list widget"""
         theme = self.theme.get_current_theme()
         
-        # Apply theme to the widget
-        self.theme.apply_theme_to_widget(self)
         
-        borda = theme['border'].name()
-        acento = theme['accent']
+        # Cor vem toda da palette da aplicacao. Aqui ficam apenas os ajustes
+        # que a palette nao expressa: respiro no campo de busca, ausencia de
+        # moldura na lista e o destaque do botao principal.
+        self.search_input.setStyleSheet("QLineEdit { padding: 6px 9px; }")
 
-        self.search_input.setStyleSheet(f"""
-            QLineEdit {{
-                background-color: {theme['editor_bg'].name()};
-                color: {theme['editor_fg'].name()};
-                border: 1px solid {borda};
-                border-radius: 8px;
-                padding: 7px 10px;
-                selection-background-color: {theme['highlight'].name()};
-            }}
-            QLineEdit:focus {{
-                border: 1px solid {acento.name()};
-            }}
-        """)
+        self.list_widget.setFrameShape(QFrame.Shape.NoFrame)
+        self.list_widget.setStyleSheet("")
 
-        # A lista nao tinha estilo proprio: herdava a moldura e a barra de
-        # rolagem nativas do Windows, que destoam dos tres temas.
-        self.list_widget.setStyleSheet(f"""
-            QListWidget {{
-                background-color: {theme['main_bg'].name()};
-                border: none;
-                outline: none;
-            }}
-            QListWidget::item {{
-                border: none;
-            }}
-        """ + self.theme.scrollbar_qss())
-
-        # O texto do botao era branco fixo — ilegivel sobre o amarelo claro do
-        # tema Minimalist. Agora o contraste vem da propria cor de fundo.
-        texto_botao = self.theme.contrast_on(acento).name()
+        # Unico realce de cor da tela: o botao de acao principal. Vem da
+        # palette (Highlight), com o texto escolhido pelo contraste.
+        realce = theme['highlight']
         self.new_note_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {acento.name()};
-                color: {texto_botao};
+                background-color: {realce.name()};
+                color: {self.theme.contrast_on(realce).name()};
                 border: none;
-                border-radius: 8px;
-                padding: 10px;
+                padding: 9px;
                 font-weight: 600;
-                margin: 6px 4px;
             }}
             QPushButton:hover {{
-                background-color: {self.theme.mix(acento, theme['main_fg'], 0.18).name()};
+                background-color: {self.theme.mix(realce, theme['main_fg'], 0.18).name()};
             }}
             QPushButton:pressed {{
-                background-color: {self.theme.mix(acento, theme['main_fg'], 0.32).name()};
+                background-color: {self.theme.mix(realce, theme['main_fg'], 0.32).name()};
             }}
         """)
     

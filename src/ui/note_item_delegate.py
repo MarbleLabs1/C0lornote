@@ -9,7 +9,7 @@ QPainter, cada uma com seu peso, alem do fundo arredondado de selecao e hover.
 """
 
 from PyQt6.QtWidgets import QStyledItemDelegate, QStyle
-from PyQt6.QtGui import QFont, QPen, QColor, QPainter
+from PyQt6.QtGui import QFont, QPen, QColor, QPainter, QPalette
 from PyQt6.QtCore import Qt, QSize, QRect
 
 
@@ -59,7 +59,15 @@ class NoteItemDelegate(QStyledItemDelegate):
             super().paint(painter, option, index)
             return
 
-        tema = self.theme.get_current_theme()
+        # As cores vem da palette que o estilo esta usando, nao de um
+        # dicionario proprio: assim o item acompanha o tema do sistema quando
+        # a aplicacao esta no estilo nativo.
+        paleta = option.palette
+        Role = QPalette.ColorRole
+        fundo = paleta.color(Role.Base)
+        texto = paleta.color(Role.Text)
+        realce = paleta.color(Role.Highlight)
+
         selecionado = bool(option.state & QStyle.StateFlag.State_Selected)
         sob_o_mouse = bool(option.state & QStyle.StateFlag.State_MouseOver)
 
@@ -69,22 +77,20 @@ class NoteItemDelegate(QStyledItemDelegate):
         # --- fundo -----------------------------------------------------
         area = option.rect.adjusted(4, 2, -4, -2)
         if selecionado:
-            painter.setBrush(tema['highlight'])
+            painter.setBrush(realce)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(area, self.RAIO, self.RAIO)
-            cor_titulo = self.theme.contrast_on(tema['highlight'])
+            cor_titulo = paleta.color(Role.HighlightedText)
             cor_previa = cor_titulo
             cor_data = cor_titulo
         else:
             if sob_o_mouse:
-                painter.setBrush(
-                    self.theme.mix(tema['main_bg'], tema['highlight'], 0.18)
-                )
+                painter.setBrush(self.theme.mix(fundo, realce, 0.18))
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawRoundedRect(area, self.RAIO, self.RAIO)
-            cor_titulo = tema['main_fg']
-            cor_previa = self.theme.muted_fg()
-            cor_data = self.theme.faint_fg()
+            cor_titulo = texto
+            cor_previa = self.theme.mix(texto, fundo, 0.42)
+            cor_data = self.theme.mix(texto, fundo, 0.62)
 
         # --- texto -----------------------------------------------------
         titulo_fonte, previa_fonte, data_fonte = self._fontes(option.font)
@@ -117,7 +123,7 @@ class NoteItemDelegate(QStyledItemDelegate):
         # espaco do titulo.
         if dados.get("is_code"):
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(cor_titulo if selecionado else QColor(tema['accent']))
+            painter.setBrush(cor_titulo if selecionado else realce)
             painter.drawRoundedRect(
                 QRect(area.left() + 4, area.top() + self.MARGEM_Y, 3, 16), 1.5, 1.5
             )

@@ -8,7 +8,7 @@ import subprocess
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QDialog, QMessageBox,
-    QTabWidget, QColorDialog
+    QTabWidget, QFrame, QColorDialog
 )
 from PyQt6.QtGui import (
     QFont, QTextCharFormat
@@ -121,85 +121,46 @@ class NoteEditor(QWidget):
             self.run_btn.setVisible(True)
     
     def apply_theme(self):
-        """Apply the current theme to all editor components"""
-        theme = self.theme.get_current_theme()
-        
-        # Apply theme to toolbar
-        self.toolbar.setStyleSheet(
-            f"background-color: {theme['toolbar_bg'].name()}; border: none;"
-        )
+        """Ajusta o que a palette nao expressa e recria o realce de sintaxe.
 
-        # Apply theme to editors
-        self.theme.apply_theme_to_widget(self.text_editor)
-        self.theme.apply_theme_to_widget(self.code_editor)
-
-        estilo_editor = f"""
-            QTextEdit {{
-                border: none;
-                padding: 10px 14px;
-                selection-background-color: {theme['highlight'].name()};
-                selection-color: {self.theme.contrast_on(theme['highlight']).name()};
-            }}
+        As cores dos widgets vem da QPalette da aplicacao; aqui ficam apenas o
+        respiro do texto, a ausencia de molduras e a fonte do editor de codigo.
         """
-        self.text_editor.setStyleSheet(
-            estilo_editor + self.theme.scrollbar_qss(theme['editor_bg'])
-        )
-        self.code_editor.setStyleSheet(
-            estilo_editor + self.theme.scrollbar_qss(theme['code_bg'])
-        )
+        theme = self.theme.get_current_theme()
 
-        # A aba inativa vinha do estilo nativo: cinza claro sobre fundo claro,
-        # ilegivel no tema Minimalist. E a aba selecionada recebia a cor do
-        # editor, que nos temas escuros e mais escura que a inativa — ou seja,
-        # a aba ativa recuava em vez de se destacar. Agora ela ganha uma faixa
-        # de acento no topo e o texto na cor de acento.
-        self.tab_widget.setStyleSheet(f"""
-            QTabWidget::pane {{
-                border: none;
-                background-color: {theme['editor_bg'].name()};
-            }}
-            QTabBar::tab {{
-                background-color: {theme['toolbar_bg'].name()};
-                color: {self.theme.mix(theme['main_fg'], theme['main_bg'], 0.30).name()};
-                border: none;
-                border-top: 2px solid {theme['toolbar_bg'].name()};
-                padding: 6px 16px;
-                margin-right: 2px;
-            }}
-            QTabBar::tab:selected {{
-                background-color: {theme['editor_bg'].name()};
-                color: {theme['accent'].name()};
-                border-top: 2px solid {theme['accent'].name()};
-                font-weight: 600;
-            }}
-            QTabBar::tab:hover:!selected {{
-                color: {theme['main_fg'].name()};
-            }}
-        """)
+        self.toolbar.setStyleSheet("")
 
-        fundo_botao = theme['button_bg']
-        texto_botao = self.theme.contrast_on(fundo_botao).name()
-        for btn in [self.bold_btn, self.italic_btn, self.underline_btn, self.color_btn, self.run_btn]:
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {fundo_botao.name()};
-                    color: {texto_botao};
-                    border: 1px solid {theme['border'].name()};
-                    border-radius: 6px;
-                    padding: 5px 11px;
-                    min-width: 26px;
-                }}
-                QPushButton:hover {{
-                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
-                }}
-                QPushButton:pressed {{
-                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.3).name()};
-                }}
-            """)
-        
+        for editor in (self.text_editor, self.code_editor):
+            editor.setFrameShape(QFrame.Shape.NoFrame)
+            editor.setStyleSheet("")
+            # Respiro em volta do texto, sem stylesheet: o proprio viewport.
+            editor.setViewportMargins(10, 8, 10, 8)
+
+        # O editor de codigo usa fonte monoespacada; o de texto, a do tema.
+        fonte_codigo = QFont()
+        fonte_codigo.setFamilies(
+            [f.strip().strip('"') for f in theme['code_font_family'].split(',')]
+        )
+        fonte_codigo.setFixedPitch(True)
+        self.code_editor.setFont(fonte_codigo)
+
+        # setDocumentMode tira a moldura do painel de abas, que o Fusion
+        # desenhava grossa demais em volta do editor. No estilo nativo do
+        # Windows ele apaga o fundo da aba nao selecionada e o texto some,
+        # entao la fica desligado.
+        from src.ui.theme import ThemeType
+        self.tab_widget.setDocumentMode(
+            self.theme.theme_type is not ThemeType.SYSTEM
+        )
+        self.tab_widget.setStyleSheet("")
+
+        for btn in (self.bold_btn, self.italic_btn, self.underline_btn,
+                    self.color_btn, self.run_btn):
+            btn.setStyleSheet("QPushButton { padding: 5px 11px; }")
+
         # Re-create syntax highlighting rules for code editor
         self.highlighter.create_formatting_rules()
-    
+
     def format_bold(self):
         """Apply bold formatting to selected text"""
         if self.mode == "text":

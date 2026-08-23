@@ -62,7 +62,7 @@ class SidebarWidget(QWidget):
     def create_smart_views(self):
         """Create the smart views section"""
         self.smart_views_label = QLabel("SMART VIEWS")
-        self.smart_views_label.setStyleSheet("font-weight: bold; font-size: 10px;")
+        # A cor entra em apply_theme(); ver o comentario la.
         self.layout.addWidget(self.smart_views_label)
         
         # Add buttons for smart views
@@ -94,7 +94,6 @@ class SidebarWidget(QWidget):
         header_layout.setContentsMargins(0, 10, 0, 5)
         
         self.categories_label = QLabel("CATEGORIES")
-        self.categories_label.setStyleSheet("font-weight: bold; font-size: 10px;")
         
         self.add_category_btn = QPushButton("+")
         self.add_category_btn.setFixedSize(24, 24)
@@ -129,7 +128,6 @@ class SidebarWidget(QWidget):
         header_layout.setContentsMargins(0, 10, 0, 5)
         
         self.tags_label = QLabel("TAGS")
-        self.tags_label.setStyleSheet("font-weight: bold; font-size: 10px;")
         
         self.add_tag_btn = QPushButton("+")
         self.add_tag_btn.setFixedSize(24, 24)
@@ -159,6 +157,7 @@ class SidebarWidget(QWidget):
         self.theme_combo.addItem("Matrix")
         self.theme_combo.addItem("Dreamcore")
         self.theme_combo.addItem("Minimalist")
+        self.theme_combo.addItem("System")
         
         # Set current theme
         self.theme_combo.setCurrentIndex(self.theme.theme_type.value)
@@ -172,111 +171,47 @@ class SidebarWidget(QWidget):
         self.layout.addLayout(theme_layout)
     
     def apply_theme(self):
-        """Apply the current theme to all sidebar components"""
+        """Ajusta o que a palette da aplicacao nao expressa.
+
+        Cor de fundo, texto, botao, selecao e barra de rolagem vem todos da
+        QPalette aplicada em MainWindow.apply_theme(). Antes cada widget daqui
+        carregava um stylesheet com cores fixas, o que passa por cima do
+        QStyle — a razao de a coluna nao parecer nativa.
+        """
         theme = self.theme.get_current_theme()
-        
-        # Apply theme to the whole sidebar
-        self.setStyleSheet(f"background-color: {theme['sidebar_bg'].name()}; color: {theme['sidebar_fg'].name()};")
-        
+
         # O titulo usava a cor de acento, que no tema Minimalist e amarelo
-        # claro sobre fundo claro — praticamente invisivel. heading_fg() cai
+        # claro sobre fundo claro: praticamente invisivel. heading_fg() cai
         # para o texto principal quando o acento nao se destaca do fundo.
         self.header.setStyleSheet(
             f"color: {self.theme.heading_fg().name()}; "
             f"font-weight: bold; padding: 2px 0 6px 0;"
         )
 
-        fundo_botao = theme['button_bg']
-        texto_botao = self.theme.contrast_on(fundo_botao).name()
+        # As listas nao precisam de moldura: a coluna ja e um bloco.
+        for lista in (self.categories_list, self.tags_list):
+            lista.setFrameShape(QFrame.Shape.NoFrame)
+            lista.setStyleSheet("")
 
-        for btn in [self.all_notes_btn, self.recent_btn, self.code_notes_btn]:
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {fundo_botao.name()};
-                    color: {texto_botao};
-                    border: 1px solid {theme['border'].name()};
-                    border-radius: 7px;
-                    padding: 7px 10px;
-                    text-align: center;
-                }}
-                QPushButton:hover {{
-                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
-                }}
-                QPushButton:pressed {{
-                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.3).name()};
-                }}
-            """)
+        for btn in (self.all_notes_btn, self.recent_btn, self.code_notes_btn):
+            btn.setStyleSheet("QPushButton { padding: 7px 10px; }")
 
-        # Os botoes "+" sao pequenos e quadrados; merecem raio proprio.
-        for btn in [self.add_category_btn, self.add_tag_btn]:
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {fundo_botao.name()};
-                    color: {texto_botao};
-                    border: 1px solid {theme['border'].name()};
-                    border-radius: 6px;
-                    padding: 2px 8px;
-                    font-weight: bold;
-                }}
-                QPushButton:hover {{
-                    background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
-                }}
-            """)
+        for btn in (self.add_category_btn, self.add_tag_btn):
+            btn.setStyleSheet("QPushButton { padding: 2px 8px; font-weight: bold; }")
 
-        # As duas listas herdavam a moldura e a barra de rolagem do Windows.
-        estilo_lista = f"""
-            QListWidget {{
-                background-color: {theme['sidebar_bg'].name()};
-                color: {theme['sidebar_fg'].name()};
-                border: 1px solid {theme['border'].name()};
-                border-radius: 8px;
-                padding: 4px;
-                outline: none;
-            }}
-            QListWidget::item {{
-                padding: 5px 6px;
-                border-radius: 5px;
-            }}
-            QListWidget::item:hover {{
-                background-color: {self.theme.mix(theme['sidebar_bg'], theme['highlight'], 0.25).name()};
-            }}
-            QListWidget::item:selected {{
-                background-color: {theme['highlight'].name()};
-                color: {self.theme.contrast_on(theme['highlight']).name()};
-            }}
-        """ + self.theme.scrollbar_qss(theme['sidebar_bg'])
+        self.theme_combo.setStyleSheet("")
 
-        self.categories_list.setStyleSheet(estilo_lista)
-        self.tags_list.setStyleSheet(estilo_lista)
+        # Rotulos de secao. Precisam de cor explicita: um stylesheet sem
+        # "color" faz o Qt abandonar a cor herdada da palette, e o texto some
+        # sobre fundo claro.
+        cor_rotulo = self.theme.mix(
+            theme['main_fg'], theme['sidebar_bg'], 0.35
+        ).name()
+        for rotulo in (self.smart_views_label, self.categories_label, self.tags_label):
+            rotulo.setStyleSheet(
+                f"color: {cor_rotulo}; font-weight: bold; font-size: 10px;"
+            )
 
-        # O seletor de tema continuava com a aparencia nativa do Windows,
-        # destoando de tudo o mais na coluna.
-        self.theme_combo.setStyleSheet(f"""
-            QComboBox {{
-                background-color: {fundo_botao.name()};
-                color: {texto_botao};
-                border: 1px solid {theme['border'].name()};
-                border-radius: 6px;
-                padding: 5px 9px;
-            }}
-            QComboBox:hover {{
-                background-color: {self.theme.mix(fundo_botao, theme['main_fg'], 0.16).name()};
-            }}
-            QComboBox::drop-down {{
-                border: none;
-                width: 20px;
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: {theme['sidebar_bg'].name()};
-                color: {theme['sidebar_fg'].name()};
-                border: 1px solid {theme['border'].name()};
-                border-radius: 6px;
-                selection-background-color: {theme['highlight'].name()};
-                selection-color: {self.theme.contrast_on(theme['highlight']).name()};
-                outline: none;
-            }}
-        """)
-    
     def theme_changed(self, index):
         """Handle theme change from the dropdown"""
         theme_type = ThemeType(index)

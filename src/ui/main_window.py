@@ -6,10 +6,11 @@ import datetime
 from typing import List
 
 from PyQt6.QtWidgets import (
-    QMainWindow, QSplitter, QWidget, QHBoxLayout, QLabel, QStatusBar, QFileDialog, QMessageBox
+    QMainWindow, QSplitter, QWidget, QHBoxLayout, QLabel, QStatusBar, QFileDialog, QMessageBox,
+    QApplication, QStyleFactory
 )
 from PyQt6.QtGui import (
-    QKeySequence, QAction, QShortcut
+    QKeySequence, QAction, QShortcut, QPalette
 )
 from PyQt6.QtCore import (
     Qt, QTimer
@@ -35,6 +36,14 @@ class MainWindow(QMainWindow):
         self._editor_baseline = None  # texto do editor tal como foi salvo
         self.theme = Theme(ThemeType.MINIMALIST)  # Default theme
         self.store = NoteStore()  # Persistencia em SQLite
+        # Guardado antes de qualquer troca: e para ele que o tema
+        # "System" volta.
+        app = QApplication.instance()
+        self._platform_style = app.style().objectName() if app else ""
+        # A palette que o Qt montou a partir do tema real do sistema.
+        # style().standardPalette() devolve uma generica, que nao segue o
+        # claro/escuro nem a cor de destaque do usuario.
+        self._platform_palette = QPalette(app.palette()) if app else None
         
         # Set up the main window
         self.setWindowTitle("C0lorNote")
@@ -239,32 +248,43 @@ class MainWindow(QMainWindow):
         save_shortcut.activated.connect(self.save_current_note)
     
     def apply_theme(self):
-        """Apply the current theme to all components"""
-        # Apply theme to components
+        """Apply the current theme through the style and the palette.
+
+        Colours are set once, on the application, and Qt's own style draws
+        every widget from them. Previously each widget carried a stylesheet
+        with hard-coded colours, which bypasses QStyle entirely — the reason
+        the app stopped looking like a native one.
+
+        The platform style on Windows ignores custom palettes for most
+        widgets, so a custom theme has to run on Fusion, which is Qt's own
+        palette-aware style. "System" hands control back to the platform
+        style, so the app looks like every other program on the desktop.
+        """
+        app = QApplication.instance()
+        nativo = self.theme.theme_type is ThemeType.SYSTEM
+
+        if app is not None:
+            estilo = self._platform_style if nativo else "Fusion"
+            if estilo and estilo.lower() != app.style().objectName().lower():
+                app.setStyle(QStyleFactory.create(estilo))
+            if nativo and self._platform_palette is not None:
+                app.setPalette(self._platform_palette)
+            elif not nativo:
+                app.setPalette(self.theme.palette())
+
+        # Componentes ainda ajustam o que a palette nao expressa (espacamento,
+        # peso de fonte, o realce da aba ativa).
         self.sidebar.apply_theme()
         self.note_list.apply_theme()
         self.note_editor.apply_theme()
-        
-        # Apply theme to main window
-        theme = self.theme.get_current_theme()
-        self.setStyleSheet(f"background-color: {theme['main_bg'].name()}; color: {theme['main_fg'].name()};")
-        
-        # Apply theme to status bar
-        # Sem padding o texto encostava na borda da janela, e o separador
-        # vertical entre os itens ficava sobrando.
-        self.status_bar.setStyleSheet(f"""
-            QStatusBar {{
-                background-color: {theme['toolbar_bg'].name()};
-                color: {self.theme.muted_fg().name()};
-                border-top: 1px solid {theme['border'].name()};
-                padding: 2px 10px;
-            }}
-            QStatusBar::item {{
-                border: none;
-            }}
-        """)
-        # Ensure branding label color is also set
-        self.branding_label.setStyleSheet(f"color: {theme['main_fg'].name()}; padding-right: 10px;") # Add some padding
+
+        # Sem padding o texto da barra de status encostava na borda da janela,
+        # e o separador vertical entre os itens ficava sobrando. As cores vem
+        # da palette.
+        self.status_bar.setStyleSheet(
+            "QStatusBar { padding: 2px 10px; } QStatusBar::item { border: none; }"
+        )
+        self.branding_label.setStyleSheet("padding-right: 10px;")
     
     def handle_filter_change(self, filter_type, filter_value):
         """Handle changes to note filtering"""
