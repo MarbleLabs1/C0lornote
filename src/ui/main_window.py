@@ -12,7 +12,7 @@ from PyQt6.QtGui import (
     QKeySequence, QAction, QShortcut
 )
 from PyQt6.QtCore import (
-    Qt
+    Qt, QTimer
 )
 
 from src.models.note import Note
@@ -24,11 +24,15 @@ from src.ui.theme import Theme, ThemeType
 
 class MainWindow(QMainWindow):
     """Main window for the C0lorNote application"""
-    
+
+    # De quanto em quanto tempo o texto aberto vai para o disco.
+    AUTOSAVE_INTERVAL_MS = 30_000
+
     def __init__(self):
         super().__init__()
         self.notes = []  # List of Note objects
         self.current_note_index = -1  # Index of the currently selected note
+        self._editor_baseline = None  # texto do editor tal como foi salvo
         self.theme = Theme(ThemeType.MINIMALIST)  # Default theme
         self.store = NoteStore()  # Persistencia em SQLite
         
@@ -65,9 +69,58 @@ class MainWindow(QMainWindow):
         
         # Load existing notes if available
         self.load_notes()
-        
+
         # Apply the initial theme
         self.apply_theme()
+
+        # Start autosaving
+        self.start_autosave()
+
+    def start_autosave(self):
+        """Save edits periodically.
+
+        Without this the editor only reaches disk on Ctrl+S, on switching
+        notes, or on a clean exit — so a crash or a power cut loses
+        everything typed since the last one.
+        """
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.setInterval(self.AUTOSAVE_INTERVAL_MS)
+        self.autosave_timer.timeout.connect(self.autosave)
+        self.autosave_timer.start()
+
+    def snapshot_editor(self):
+        """Record what the editor holds right now, as the saved reference.
+
+        Comparing against note.content does not work: QTextEdit.toHtml()
+        returns a full normalised HTML document, never the fragment that was
+        put in, so every rich text note would look modified the instant it
+        was opened. Comparing the editor against itself avoids that entirely.
+        """
+        self._editor_baseline = self.note_editor.get_content()
+
+    def has_unsaved_changes(self):
+        """True when the editor holds text that has not been persisted."""
+        if self.current_note_index < 0:
+            return False
+        if self.current_note_index >= len(self.note_list.filtered_notes):
+            return False
+        if self._editor_baseline is None:
+            return False
+        return self.note_editor.get_content() != self._editor_baseline
+
+    def autosave(self):
+        """Persist the open note, but only when it actually changed."""
+        if not self.has_unsaved_changes():
+            return
+        note = self.note_list.filtered_notes[self.current_note_index]
+        note.content = self.note_editor.get_content()
+        note.modified_date = datetime.datetime.now()
+        self.note_list.update_list()
+        self.save_notes()
+        self.snapshot_editor()
+        self.status_message.setText(
+            f"Autosaved at {note.modified_date.strftime('%H:%M:%S')}"
+        )
     
     def create_layout(self):
         """Create the main window layout with splitters"""
@@ -227,6 +280,7 @@ class MainWindow(QMainWindow):
         
         # Update the editor with the note content
         self.note_editor.set_content(note.content, note.is_code)
+        self.snapshot_editor()
         
 
         # Update status bar message
@@ -251,6 +305,7 @@ class MainWindow(QMainWindow):
         self.status_message.setText(f"Note '{note.title}' saved at {note.modified_date.strftime('%Y-%m-%d %H:%M')}")
         # Save all notes to disk
         self.save_notes()
+        self.snapshot_editor()
     
     def delete_current_note(self):
         """Delete the current note"""
@@ -414,7 +469,11 @@ class MainWindow(QMainWindow):
         self.sidebar.update_categories_list()
         self.sidebar.update_tags_list()
         self.note_list.set_notes(self.notes)
-    
+
+        # Grava ja: sem isso as notas de exemplo so existem em memoria, e um
+        # primeiro uso encerrado a forca comeca do zero na proxima abertura.
+        self.save_notes()
+
     def save_notes(self):
         """Save all notes to the database"""
         try:

@@ -16,7 +16,7 @@ C0lorNote has been completely rebuilt with PyQt6 to provide a modern, feature-ri
 - 🏷️ **Organization**: Categorize and tag notes for easy filtering
 - 🔄 **Smart Views**: Quickly access all notes, recent notes, or code snippets
 - 📤 **Export Options**: Save notes as HTML, Python code, or plain text files
-- 💾 **Auto-saving**: Notes are automatically saved as you work
+- 💾 **Auto-saving**: The open note is written to disk every 30 seconds, on <kbd>Ctrl</kbd>+<kbd>S</kbd>, when you switch notes and on exit
 - 👤 **Branded UI**: Includes subtle @marbleceo branding in the status bar.
 
 ## 🎭 Themes

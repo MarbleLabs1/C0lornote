@@ -133,6 +133,47 @@ def test_busca_ignora_as_tags_html():
     assert len(window.note_list.filtered_notes) == 1
 
 
+def test_notas_de_exemplo_vao_para_o_disco_na_primeira_abertura():
+    """Um primeiro uso encerrado a forca nao pode voltar vazio."""
+    _, window = _app_and_window()
+    notas, _, _ = storage.NoteStore().load()
+    assert len(notas) == len(window.notes) == 2
+
+
+def test_autosave_detecta_e_grava_alteracao_nao_salva():
+    _, window = _app_and_window()
+    window.handle_note_selection(0)
+
+    assert not window.has_unsaved_changes()
+
+    window.note_editor.set_content("<p>texto novo que ainda nao foi salvo</p>")
+    assert window.has_unsaved_changes()
+
+    window.autosave()
+    assert not window.has_unsaved_changes()
+
+    notas, _, _ = storage.NoteStore().load()
+    assert any("texto novo" in n.content for n in notas)
+
+
+def test_autosave_nao_grava_quando_nada_mudou():
+    """Sem alteracao o timer nao pode reescrever o banco a cada 30 s."""
+    _, window = _app_and_window()
+    window.handle_note_selection(0)
+
+    chamadas = []
+    window.save_notes = lambda: chamadas.append(1)
+
+    window.autosave()
+    assert chamadas == []
+
+
+def test_o_timer_de_autosave_esta_ligado():
+    _, window = _app_and_window()
+    assert window.autosave_timer.isActive()
+    assert window.autosave_timer.interval() == window.AUTOSAVE_INTERVAL_MS
+
+
 if __name__ == "__main__":
     falhas = 0
     for nome, funcao in sorted(globals().items()):
