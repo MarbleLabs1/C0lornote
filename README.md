@@ -1,5 +1,10 @@
 # 📝 C0lorNote
 
+[![Download](https://img.shields.io/badge/Download-Windows%20.exe-2ea44f?style=for-the-badge)](https://github.com/MarbleLabs1/C0lornote/releases/latest)
+[![Tests](https://github.com/MarbleLabs1/C0lornote/actions/workflows/ci.yml/badge.svg)](https://github.com/MarbleLabs1/C0lornote/actions/workflows/ci.yml)
+
+**[Download for Windows](https://github.com/MarbleLabs1/C0lornote/releases/latest)** — one file, no Python needed. Or build from source below.
+
 A modern note-taking application built with PyQt6, featuring rich text editing, code editing with syntax highlighting, and three beautiful themes. This completely redesigned version provides a sleek, responsive interface inspired by popular note apps like Notion, Google Keep, and Apple Notes.
 
 ![C0lorNote Application](assets/c0lornote.png)
